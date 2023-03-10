@@ -48,7 +48,7 @@ model_uri
 # COMMAND ----------
 
 # MAGIC %r
-# MAGIC input_table_name = "default.[[input_table_name]]"
+# MAGIC input_table_name = "[[input_table_name]]"
 
 # COMMAND ----------
 
