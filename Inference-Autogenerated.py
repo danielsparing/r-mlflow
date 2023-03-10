@@ -13,31 +13,34 @@
 model_name = "[[model_name]]"
 model_version = "[[model_version]]"
 
-from mlflow import MlflowClient
-
-client = MlflowClient()
-model_uri = client.get_model_version_download_uri(model_name, model_version)
-model_uri
-
-# COMMAND ----------
-
-# MAGIC %r
-# MAGIC model_uri <- "[[model_uri]]"  # COPY FROM ABOVE
-# MAGIC 
-# MAGIC install.packages('mlflow')
-# MAGIC library(mlflow)
-# MAGIC library(sparklyr)
-
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Environment Recreation
-# MAGIC To best re-create the training environment, use the same cluster runtime and version from training. [...]
+# MAGIC To best re-create the training environment, use the same cluster runtime and version from training.. The cell below downloads the model artifacts associated with your model in the remote registry, which include `conda.yaml` and `requirements.txt` files. In this notebook, `pip` is used to reinstall dependencies by default.
+# MAGIC 
+# MAGIC ### (Optional) Conda Instructions
+# MAGIC Models logged with an MLflow client version earlier than 1.18.0 do not have a `requirements.txt` file. If you are using a Databricks ML runtime (versions 7.4-8.x), you can replace the `pip install` command below with the following lines to recreate your environment using `%conda` instead of `%pip`.
+# MAGIC ```
+# MAGIC conda_yml = os.path.join(local_path, "conda.yaml")
+# MAGIC %conda env update -f $conda_yml
+# MAGIC ```
 
 # COMMAND ----------
 
-# MAGIC %r
-# MAGIC library(randomForest)  # TODO: this library is a model dependency, should be dynamic
+from mlflow.store.artifact.models_artifact_repo import ModelsArtifactRepository
+import os
+
+model_uri = f"models:/{model_name}/{model_version}"
+local_path = ModelsArtifactRepository(model_uri).download_artifacts("") # download model from remote registry
+
+requirements_path = os.path.join(local_path, "requirements.txt")
+if not os.path.exists(requirements_path):
+  dbutils.fs.put("file:" + requirements_path, "", True)
+
+# COMMAND ----------
+
+# MAGIC %pip install -r $requirements_path
 
 # COMMAND ----------
 
@@ -47,15 +50,19 @@ model_uri
 
 # COMMAND ----------
 
-# MAGIC %r
-# MAGIC input_table_name = "[[input_table_name]]"
+# redefining key variables here because %pip and %conda restarts the Python interpreter
+model_name = "[[nodel_name]]"
+model_version = "[[model_version]]"
+input_table_name = "default.[[input_table_name]]"
+output_table_path = f"/FileStore/batch-inference/{model_name}"
 
 # COMMAND ----------
 
-# MAGIC %r
-# MAGIC # load table
-# MAGIC sc <- spark_connect(method = "databricks")
-# MAGIC df <- sparklyr::spark_read_table(sc = sc, name = input_table_name)
+# load table as a Spark DataFrame
+table = spark.table(input_table_name)
+
+# optionally, perform additional data processing (may be necessary to conform the schema)
+
 
 # COMMAND ----------
 
@@ -64,13 +71,17 @@ model_uri
 
 # COMMAND ----------
 
-# MAGIC %r
-# MAGIC mlflow_model <- mlflow_load_model(model_uri = model_uri) 
+import mlflow
+from pyspark.sql.functions import struct
+
+model_uri = f"models:/{model_name}/{model_version}"
+
+# create spark user-defined function for model prediction
+predict = mlflow.pyfunc.spark_udf(spark, model_uri, result_type="double")
 
 # COMMAND ----------
 
-# MAGIC %r
-# MAGIC output_df <- data.frame(mlflow_predict(mlflow_model, data = df))
+output_df = table.withColumn("prediction", predict(struct(*table.columns)))
 
 # COMMAND ----------
 
@@ -90,15 +101,19 @@ model_uri
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC """
-# MAGIC from datetime import datetime
-# MAGIC 
-# MAGIC # To write to a unity catalog table, see instructions above
-# MAGIC output_df.write.save(f"{output_table_path}_{datetime.now().isoformat()}".replace(":", "."))
-# MAGIC """
+from datetime import datetime
+
+# To write to a unity catalog table, see instructions above
+output_df.write.save(f"{output_table_path}_{datetime.now().isoformat()}".replace(":", "."))
 
 # COMMAND ----------
 
-# MAGIC %r
-# MAGIC output_df
+output_df.display()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC &copy; 2023 Databricks, Inc. All rights reserved.<br/>
+# MAGIC Apache, Apache Spark, Spark and the Spark logo are trademarks of the <a href="https://www.apache.org/">Apache Software Foundation</a>.<br/>
+# MAGIC <br/>
+# MAGIC <a href="https://databricks.com/privacy-policy">Privacy Policy</a> | <a href="https://databricks.com/terms-of-use">Terms of Use</a> | <a href="https://help.databricks.com/">Support</a>
