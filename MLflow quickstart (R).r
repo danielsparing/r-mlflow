@@ -34,70 +34,52 @@ library(mlflow)
 # COMMAND ----------
 
 install.packages("carrier")
-install.packages("e1071")
+# install.packages("e1071")
+# install.packages("xgboost")
 
 library(MASS)
 library(caret)
-library(e1071)
-library(randomForest)
-library(SparkR)
+# library(e1071)
+library(xgboost)
+# library(SparkR)
 library(carrier)
 library(sparklyr)
 
 # COMMAND ----------
 
 # create Delta Table to be scored
-sc <- spark_connect(method = "databricks")
+sc <- sparklyr::spark_connect(method = "databricks")
 iris_ref <- copy_to(sc, df = Pima.te[,1:7], temporary = TRUE, overwrite = TRUE)
 sparklyr::spark_write_table(iris_ref, name = "iris_score", mode = "overwrite") 
 
 # COMMAND ----------
 
 with(mlflow_start_run(), {
-  
+    
   # Set the model parameters
-  ntree <- 100
-  mtry <- 3
-  
+  nrounds <- 2
+
   # Create and train model
-  rf <- randomForest(type ~ ., data=Pima.tr, ntree=ntree, mtry=mtry)
+  bst <- xgboost(data=as.matrix(Pima.tr[,1:7]), label=Pima.tr[,8], nrounds=2)
   
   # Use the model to make predictions on the test dataset
-  pred <- predict(rf, newdata=Pima.te[,1:7])
+  pred <- predict(bst, newdata=as.matrix(Pima.te[,1:7]))
   
   # Log the model parameters used for this run
-  mlflow_log_param("ntree", ntree)
-  mlflow_log_param("mtry", mtry)
-  
-  # Define metrics to evaluate the model
-  cm <- confusionMatrix(pred, reference = Pima.te[,8])
-  sensitivity <- cm[["byClass"]]["Sensitivity"]
-  specificity <- cm[["byClass"]]["Specificity"]
-  
-  # Log the value of the metrics 
-  mlflow_log_metric("sensitivity", sensitivity)
-  mlflow_log_metric("specificity", specificity)
+  mlflow_log_param("nrounds", nrounds)
   
   # Log the model
   # The crate() function from the R package "carrier" stores the model as a function
-  predictor <- crate(function(x) stats::predict(object = rf, newData = .x), rf = rf)
+  # predictor <- crate(function(x) stats::predict(object = bst, newData = .x), bst = bst)
+  predictor <- crate(function(x) stats::predict(object = bst, newData = .x), bst = bst)
   mlflow_log_model(predictor, "model")     
   
-  # Create and plot confusion matrix
-  png(filename="confusion_matrix_plot.png")
-  barplot(as.matrix(cm), main="Results",
-         xlab="Observed", ylim=c(0,200), col=c("green","blue"),
-         legend=rownames(cm), beside=TRUE)
-  dev.off()
-  
-  # Save the plot and log it as an artifact
-  mlflow_log_artifact("confusion_matrix_plot.png") 
     
 })
 
 # COMMAND ----------
 
-predictor(Pima.te[,1:7])
+predictor(as.matrix(Pima.te[,1:7]))
 
 # COMMAND ----------
 
