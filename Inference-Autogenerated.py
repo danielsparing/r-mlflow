@@ -74,19 +74,19 @@ model_uri
 
 # COMMAND ----------
 
-.%md ## Save predictions
-**The default output path on DBFS is accessible to everyone in this Workspace. If you want to limit access to the output you must change the path to a protected location.**
-The cell below will save the output table to the specified FileStore path. `datetime.now()` is appended to the path to prevent overwriting the table in the event that this notebook is run in a batch inference job. To overwrite existing tables at the path, replace the cell below with:
-```python
-output_df.write.mode("overwrite").save(output_table_path)
-```
-
-### (Optional) Write predictions to Unity Catalog
-If you have access to any UC catalogs, you can also save predictions to UC by specifying a table in the format `<catalog>.<database>.<table>`.
-```python
-output_table = "" # Example: "ml.batch-inference.[[model_name]]"
-output_df.write.saveAsTable(output_table)
-```
+# MAGIC %md ## Save predictions
+# MAGIC **The default output path on DBFS is accessible to everyone in this Workspace. If you want to limit access to the output you must change the path to a protected location.**
+# MAGIC The cell below will save the output table to the specified FileStore path. `datetime.now()` is appended to the path to prevent overwriting the table in the event that this notebook is run in a batch inference job. To overwrite existing tables at the path, replace the cell below with:
+# MAGIC ```python
+# MAGIC output_df.write.mode("overwrite").save(output_table_path)
+# MAGIC ```
+# MAGIC 
+# MAGIC ### (Optional) Write predictions to Unity Catalog
+# MAGIC If you have access to any UC catalogs, you can also save predictions to UC by specifying a table in the format `<catalog>.<database>.<table>`.
+# MAGIC ```python
+# MAGIC output_table = "" # Example: "ml.batch-inference.[[model_name]]"
+# MAGIC output_df.write.saveAsTable(output_table)
+# MAGIC ```
 
 # COMMAND ----------
 
