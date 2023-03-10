@@ -42,6 +42,14 @@ library(e1071)
 library(randomForest)
 library(SparkR)
 library(carrier)
+library(sparklyr)
+
+# COMMAND ----------
+
+# create Delta Table to be scored
+sc <- spark_connect(methodd = "databricks")
+iris_ref <- copy_to(sc, df = Pima.te[,1:7], temporary = TRUE, overwrite = TRUE)
+sparklyr::spark_write_table(iris_ref, name = "iris_score", mode = "overwrite") 
 
 # COMMAND ----------
 
@@ -72,7 +80,7 @@ with(mlflow_start_run(), {
   
   # Log the model
   # The crate() function from the R package "carrier" stores the model as a function
-  predictor <- crate(function(x) predict(rf,.x))
+  predictor <- crate(function(x) stats::predict(object = rf, newData = .x), rf = rf)
   mlflow_log_model(predictor, "model")     
   
   # Create and plot confusion matrix
@@ -86,6 +94,10 @@ with(mlflow_start_run(), {
   mlflow_log_artifact("confusion_matrix_plot.png") 
     
 })
+
+# COMMAND ----------
+
+predictor(Pima.te[,1:7])
 
 # COMMAND ----------
 
