@@ -47,7 +47,7 @@ library(sparklyr)
 # COMMAND ----------
 
 # create Delta Table to be scored
-sc <- spark_connect(methodd = "databricks")
+sc <- spark_connect(method = "databricks")
 iris_ref <- copy_to(sc, df = Pima.te[,1:7], temporary = TRUE, overwrite = TRUE)
 sparklyr::spark_write_table(iris_ref, name = "iris_score", mode = "overwrite") 
 
