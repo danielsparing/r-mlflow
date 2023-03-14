@@ -35,7 +35,7 @@ library(mlflow)
 
 install.packages("carrier")
 # install.packages("e1071")
-# install.packages("xgboost")
+install.packages("xgboost")
 
 library(MASS)
 library(caret)
