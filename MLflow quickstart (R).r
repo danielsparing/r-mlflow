@@ -38,7 +38,7 @@ install.packages("e1071")
 
 library(MASS)
 library(caret)
-library(e1071)
+# library(e1071)
 library(randomForest)
 library(SparkR)
 library(carrier)
@@ -80,7 +80,7 @@ with(mlflow_start_run(), {
   
   # Log the model
   # The crate() function from the R package "carrier" stores the model as a function
-  predictor <- crate(function(x) stats::predict(object = rf, newData = x), rf = rf)
+  predictor <- crate(function(x) stats::predict(object = rf, newdata = x), rf = rf)
   mlflow_log_model(predictor, "model")     
   
   # Create and plot confusion matrix
