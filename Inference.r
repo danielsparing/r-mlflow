@@ -36,10 +36,6 @@ library(sparklyr)
 
 # COMMAND ----------
 
-library(randomForest)  # TODO: this library is a model dependency, should be dynamic
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## Define input and output
 # MAGIC The table path assigned to`input_table_name` will be used for batch inference and the predictions will be saved to `output_table_path`. After the table has been loaded, you can perform additional data processing, such as renaming or removing columns, to ensure the model and table schema matches.
