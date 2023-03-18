@@ -34,14 +34,11 @@ library(mlflow)
 # COMMAND ----------
 
 install.packages("carrier")
-# install.packages("e1071")
 install.packages("xgboost")
 
 library(MASS)
 library(caret)
-# library(e1071)
 library(xgboost)
-# library(SparkR)
 library(carrier)
 library(sparklyr)
 
@@ -70,8 +67,7 @@ with(mlflow_start_run(), {
   
   # Log the model
   # The crate() function from the R package "carrier" stores the model as a function
-  # predictor <- crate(function(x) stats::predict(object = bst, newData = .x), bst = bst)
-  predictor <- crate(function(x) stats::predict(object = bst, newData = .x), bst = bst)
+  predictor <- crate(function(x) stats::predict(object = bst, newdata = x), bst = bst)
   mlflow_log_model(predictor, "model")     
   
     
