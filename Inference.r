@@ -36,13 +36,13 @@ library(sparklyr)
 
 # COMMAND ----------
 
-library(randomForest)  # TODO: this library is a model dependency, should be dynamic
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## Define input and output
 # MAGIC The table path assigned to`input_table_name` will be used for batch inference and the predictions will be saved to `output_table_path`. After the table has been loaded, you can perform additional data processing, such as renaming or removing columns, to ensure the model and table schema matches.
+
+# COMMAND ----------
+
+install.packages('xgboost')  # TODO: this library is a model dependency, should be dynamic
 
 # COMMAND ----------
 
@@ -65,7 +65,8 @@ mlflow_model <- mlflow_load_model(model_uri = model_uri)
 
 # COMMAND ----------
 
-output_df <- data.frame(mlflow_predict(mlflow_model, data = df))
+# only works if df fits in memory
+output_df <- data.frame(mlflow_predict(mlflow_model, data = data.frame(df)))
 
 # COMMAND ----------
 
